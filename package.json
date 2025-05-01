@@ -1,0 +1,20 @@
+{
+  "name": "daytona-project",
+  "version": "1.0.0",
+  "description": "A project for running code in Daytona.io sandboxes",
+  "main": "index.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node --loader ts-node/esm index.mts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@daytonaio/sdk": "latest",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.5",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.6"
+  }
+}
