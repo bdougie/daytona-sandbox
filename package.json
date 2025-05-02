@@ -9,7 +9,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@daytonaio/sdk": "latest",
+    "@daytonaio/sdk": "^0.15.0",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
