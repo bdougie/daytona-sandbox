@@ -16,7 +16,7 @@ async function runDaytona() {
     const daytona = new Daytona({ 
       apiKey: process.env.DAYTONA_API_KEY,
       // Add timeout to avoid hanging indefinitely
-      timeout: 30000 
+      timeout: 60000 // Increased timeout to give more time
     });
 
     console.log('Creating sandbox...');
@@ -25,8 +25,68 @@ async function runDaytona() {
     });
 
     console.log('Sandbox created successfully, running code...');
-    const response = await sandbox.process.codeRun('console.log("Hello World from code!")')
-    console.log('Code execution result:', response.result);
+    
+    // Modified code to return the formatted Bitcoin price
+    const response = await sandbox.process.codeRun(`
+      async function getBitcoinPrice() {
+        console.log("Starting API request to CoinGecko...");
+        try {
+          const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+          console.log("API response status:", response.status);
+          
+          if (!response.ok) {
+            throw new Error(\`API responded with status \${response.status}\`);
+          }
+          
+          const text = await response.text();
+          console.log("Raw response text:", text);
+          
+          const data = JSON.parse(text);
+          console.log("Parsed data:", data);
+          
+          if (!data.bitcoin || typeof data.bitcoin.usd !== 'number') {
+            throw new Error("Unexpected API response format");
+          }
+          
+          return data.bitcoin.usd;
+        } catch (err) {
+          console.error("Error in getBitcoinPrice:", err);
+          throw err;
+        }
+      }
+      
+      // Execute the function and return its result with formatting
+      (async () => {
+        try {
+          console.log("Starting to fetch Bitcoin price...");
+          const price = await getBitcoinPrice();
+          console.log("Bitcoin price fetched:", price);
+          
+          // Format the price in USD before returning
+          const formattedPrice = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(price);
+          
+          console.log("Formatted price:", formattedPrice);
+          return formattedPrice; // Return the formatted price
+        } catch (error) {
+          console.error("Caught error:", error);
+          return \`Error: \${error instanceof Error ? error.message : String(error)}\`;
+        }
+      })();
+    `);
+    
+    console.log('Full response from sandbox:', response);
+    
+    // Display the already formatted price
+    if (response && response.result !== undefined) {
+      console.log('Bitcoin price:', response.result);
+    } else {
+      console.log('No valid result returned from sandbox');
+    }
 
     console.log('Cleaning up...');
     await daytona.remove(sandbox);
@@ -34,7 +94,7 @@ async function runDaytona() {
   } catch (error) {
     console.error('Error details:', error);
     
-    if (error.isAxiosError) {
+    if ('isAxiosError' in error) {
       console.error('API Response details:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
